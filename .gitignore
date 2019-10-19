@@ -1,0 +1,12 @@
+.idea
+log
+sim
+sim.dump
+sim.pid
+client_test
+client_test.pid
+proto2codec
+readstream_test.go
+session_test.go
+protocol.html
+protocol.md
