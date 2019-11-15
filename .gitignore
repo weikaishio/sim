@@ -10,3 +10,8 @@ readstream_test.go
 session_test.go
 protocol.html
 protocol.md
+
+bazel-bin
+bazel-out
+bazel-sim
+bazel-testlogs

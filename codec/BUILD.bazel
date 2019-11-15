@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "codec.go",
+        "proto.go",
+    ],
+    importpath = "[github.com/weikaishio/sim]/codec",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_mkideal_log//:go_default_library"],
+)

@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "listener.go",
+        "readstream.go",
+        "session.go",
+    ],
+    importpath = "[github.com/weikaishio/sim]/common/netutil",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_mkideal_log//:go_default_library",
+        "@com_github_weikaishio_distributed_lib//buffer:go_default_library",
+        "@org_golang_x_net//websocket:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "readstream_test.go",
+        "session_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = ["@com_github_weikaishio_distributed_lib//buffer:go_default_library"],
+)

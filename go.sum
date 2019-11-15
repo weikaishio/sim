@@ -1,0 +1,11 @@
+github.com/mkideal/log v0.1.0 h1:X4B5299aKHmtjK0IMxR1zfgcMDPnBICG0vkbXdb6kgE=
+github.com/mkideal/log v0.1.0/go.mod h1:UHY5EOk5+/f2z2bQ6BGspFw5gl4F1SKjZI7Bqetm724=
+github.com/robfig/config v0.0.0-20141207224736-0f78529c8c7e h1:3/9k/etUfgykjM3Rx8X0echJzo7gNNeND/ubPkqYw1k=
+github.com/robfig/config v0.0.0-20141207224736-0f78529c8c7e/go.mod h1:Zerq1qYbCKtIIU9QgPydffGlpYfZ8KI/si49wuTLY/Q=
+github.com/weikaishio/distributed_lib v0.0.0-20191031115827-eca901f7105b h1:3ok6V47x3MMBY/da1QZwqPqxCXks74Sl0oDOTUxGd3g=
+github.com/weikaishio/distributed_lib v0.0.0-20191031115827-eca901f7105b/go.mod h1:2vNOGXlm2w70NMXRukfH1+beQqmJ+p6gSN2VtSJxUFI=
+golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
+golang.org/x/net v0.0.0-20191112182307-2180aed22343 h1:00ohfJ4K98s3m6BGUoBd8nyfp4Yl0GoIKvw5abItTjI=
+golang.org/x/net v0.0.0-20191112182307-2180aed22343/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
+golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
+golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
