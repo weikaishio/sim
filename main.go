@@ -101,7 +101,7 @@ func reload() {
 	} else {
 		log.Info("cfg:%v", cfg)
 	}
-	log.SetLevelFromString(cfg.LogLevel)
+	//log.SetLevelFromString(cfg.LogLevel)
 
 	if svr == nil {
 		svr = server.NewServer(cfg)

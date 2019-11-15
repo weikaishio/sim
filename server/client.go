@@ -67,10 +67,6 @@ func (c *Client) dispatchProto(msg interface{}) {
 		c.onAuth(ptc)
 	case *codec.HeartBeat:
 		c.onHeartbeat(ptc)
-	case *codec.SendNumberRes:
-		c.onSendNumberRes(ptc)
-	case *codec.RevNumber:
-		c.onRevNumber(ptc)
 	default:
 		log.Warn("dispatchProto not support cmd:%v", ptc)
 	}
@@ -93,13 +89,6 @@ func (c *Client) onAuth(ptc *codec.Auth) {
 			}
 			time.Sleep(3 * time.Second)
 
-			proto := &codec.SendNumber{
-				Cmd:      codec.CMD_SendNumber,
-				Seq:      c.makeNewSeq(),
-				Number:   uint32(c.makeNewSeq()),
-				Duration: 121,
-			}
-			c.sendProto(proto.Cmd, proto)
 			log.Info("onSendNumber:%d,:%v", c.id, ptc)
 			time.Sleep(27 * time.Second)
 		}
@@ -115,18 +104,7 @@ func (c *Client) onHandShake(ptc *codec.HandShake) {
 	c.sendProto(res.Cmd, res)
 	c.currentStatus |= ClientStatus_HandShaked
 }
-func (c *Client) onRevNumber(ptc *codec.RevNumber) {
-	log.Info("onRevNumber:%d,:%v", c.id, ptc)
-	res := &codec.RevNumberRes{
-		Cmd:    codec.CMD_RevNumberRes,
-		Seq:    c.makeNewSeq(),
-		Status: codec.RESP_Status_Success,
-	}
-	c.sendProto(res.Cmd, res)
-}
-func (c *Client) onSendNumberRes(ptc *codec.SendNumberRes) {
-	log.Info("onSendNumberRes:%d,:%v", c.id, ptc)
-}
+
 func (c *Client) onHeartbeat(ptc *codec.HeartBeat) {
 	log.Info("onHeartbeat:%d,:%v", c.id, ptc)
 	if c.currentStatus&ClientStatus_Logined == 0 {

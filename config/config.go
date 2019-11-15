@@ -15,9 +15,6 @@ type Config struct {
 	LogDir   string
 	LogLevel string
 
-	Debug      bool
-	PprofAddrs []string
-
 	Host          string
 	Port          int
 	KeepaliveTime int
@@ -45,9 +42,6 @@ func (cfg *Config) Clone() (*Config, error) {
 
 		LogDir:   cfg.LogDir,
 		LogLevel: cfg.LogLevel,
-
-		Debug:      cfg.Debug,
-		PprofAddrs: cfg.PprofAddrs,
 
 		Host:          cfg.Host,
 		Port:          cfg.Port,
@@ -96,21 +90,6 @@ func (cfg *Config) loadBasicConfig(conf string) error {
 	// web服务配置
 	cfg.HttpPort, cfg.EncryptKey, cfg.IsProduction = common.ReadWebConfig(c, false)
 
-	return nil
-}
-func (cfg *Config) SetExitInfo(lastMachineCMD, machinesOffline string) error {
-	basic := cfg.Dir + "basic.conf"
-	c, err := robfigconf.ReadDefault(basic)
-	if err != nil {
-		log.Info("SetLastMachineCMD ReadDefault err:%v", err)
-		return err
-	}
-	ok := c.AddOption("exit", "last_machine_cmd", lastMachineCMD)
-	log.Info("SetExitInfo AddOption:%s,%b", lastMachineCMD, ok)
-
-	ok = c.AddOption("exit", "machinesOffline", machinesOffline)
-	log.Info("SetExitInfo AddOption:%s,%b", machinesOffline, ok)
-	c.WriteFile(basic, 0644, "for exit update")
 	return nil
 }
 func (cfg *Config) loadAdvancedConfig(conf string) error {
