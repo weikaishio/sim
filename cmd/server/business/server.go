@@ -1,4 +1,4 @@
-package server
+package business
 
 import (
 	"fmt"
@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/weikaishio/distributed_lib/buffer"
+	"github.com/weikaishio/sim/cmd/server/config"
 	"github.com/weikaishio/sim/codec"
 	"github.com/weikaishio/sim/common/netutil"
-	"github.com/weikaishio/sim/config"
 
 	"github.com/mkideal/log"
 )

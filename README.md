@@ -14,6 +14,29 @@
 2、jenkins自动触发构建
 这边尝试下bazel构建，赶脚也不错
 ```
+* 设计考虑时序图
+```text
+https://www.jianshu.com/p/8f8e7fd20054 https://blog.csdn.net/zhishengqianjun/article/details/74065232 时序图
+https://www.jianshu.com/p/a9ff5a9cdb25 UML流程图
+- 代表实线 ， 主动发送消息，比如 request请求
+> 代表实心箭头 ， 同步消息，比如 AJAX 的同步请求
+-- 代表虚线，表示返回消息，spring Controller return
+>> 代表非实心箭头 ，异步消息，比如AJAX请求 
+```
+```sequence
+title im时序图
+
+participant User
+participant Gate
+participant Route
+participant Server
+
+User->Gate:Login, SendMsg
+Gate->User:RecvMsg
+Gate->Route:UploadMsg
+Route->Server:UploadMsg
+```
+
 * 压测看连接数
 ```text
 netstat -n | awk '/^tcp/ {++State[$NF]} END {for(i in State) print i, State[i]}'

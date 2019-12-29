@@ -1,10 +1,11 @@
-package server
+package business
 
 import (
-	"github.com/weikaishio/sim/codec"
-	"github.com/weikaishio/sim/common/netutil"
 	"sync/atomic"
 	"time"
+
+	"github.com/weikaishio/sim/codec"
+	"github.com/weikaishio/sim/common/netutil"
 
 	"github.com/mkideal/log"
 )

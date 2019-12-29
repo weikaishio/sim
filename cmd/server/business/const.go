@@ -1,4 +1,4 @@
-package server
+package business
 
 const (
 	bufPoolSize     = 100

@@ -12,10 +12,9 @@ import (
 	"time"
 
 	"github.com/mkideal/log"
-
+	"github.com/weikaishio/sim/cmd/server/business"
+	"github.com/weikaishio/sim/cmd/server/config"
 	"github.com/weikaishio/sim/common/osutil/pid"
-	"github.com/weikaishio/sim/config"
-	"github.com/weikaishio/sim/server"
 )
 
 var (
@@ -24,7 +23,7 @@ var (
 	pidFile   string
 	configDir string
 	cfg       *config.Config
-	svr       *server.Server
+	svr       *business.Server
 )
 
 func init() {
@@ -104,7 +103,7 @@ func reload() {
 	//log.SetLevelFromString(cfg.LogLevel)
 
 	if svr == nil {
-		svr = server.NewServer(cfg)
+		svr = business.NewServer(cfg)
 	} else {
 		svr.RefreshCfg(cfg)
 	}
