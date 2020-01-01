@@ -6,6 +6,7 @@ import (
 
 	"github.com/weikaishio/sim/codec"
 	"github.com/weikaishio/sim/common/netutil"
+	"github.com/weikaishio/sim/gate/config"
 
 	"github.com/mkideal/log"
 )
@@ -42,7 +43,7 @@ func (c *Client) onRecvPacket(packet []byte) {
 		return
 	}
 	now := time.Now()
-	if int(now.Sub(c.lastActiveTime).Seconds()) > c.svr.cfg.KeepaliveTime {
+	if int(now.Sub(c.lastActiveTime).Seconds()) > config.Conf.Net.KeepaliveTime {
 		msg, err := codec.Decode(packet)
 		log.Warn("Client onRecvPacket timeout:%d,msg:%v,decodeErr:%v", int(now.Sub(c.lastActiveTime).Seconds()), msg, err)
 		c.session.Quit(false)

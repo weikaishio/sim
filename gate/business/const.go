@@ -4,6 +4,8 @@ const (
 	bufPoolSize     = 100
 	bufMaxPoolSize  = 1000
 	maxConWriteSize = 1000
+
+	maxMsgChanSize = 10000
 )
 
 const (

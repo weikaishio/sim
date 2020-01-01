@@ -1,0 +1,13 @@
+syntax = "proto3";
+package im_service;
+
+//  接口
+service im {
+    rpc NewMsg (stream MsgModel) returns (stream MsgModel);
+}
+message MsgModel {
+    int32 gate_id = 1;
+    uint32 uid = 2;
+    int32 msg_type = 3;
+    string msg_content = 4;
+}

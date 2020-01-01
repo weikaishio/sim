@@ -1,0 +1,31 @@
+[log]
+dir = "/Users/wangjiangang/beta/workspace/golang/log/sim_service"
+
+[etcd]
+endpoints="59.110.27.156:3379,59.110.27.156:3381,59.110.27.156:3383"
+username="root"
+password="root"
+
+[grpcSvr]
+target="im_service"
+port=8911
+host="127.0.0.1"
+cert_file="cert.pem"
+key_file="cert.key"
+
+[grpcAuths]
+auths="test1=test123&test2=test234"
+
+[redis]
+addr="127.0.0.1:6379"
+password=""
+dB=1
+dialTimeout="3s"
+readTimeout="5s"
+writeTimeout="3s"
+idleTimeout ="30s"
+idleCheckFrequency="15s"
+poolTimeout="30s"
+maxConnAge="30s"
+minIdleConns=5
+poolSize=20

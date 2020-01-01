@@ -1,0 +1,33 @@
+[net]
+host="0.0.0.0"
+port= 8910
+keepalive-time= 180
+
+[log]
+dir = "/Users/wangjiangang/beta/workspace/golang/log/sim_gate"
+
+[grpcImCli]
+target="im_service"
+cert_server_name="domain.com"
+cert_file="domain.com.pem"
+auth_name="test"
+auth_pwd="test123"
+
+[etcd]
+endpoints="59.110.27.156:3379,59.110.27.156:3381,59.110.27.156:3383"
+username="root"
+password="root"
+
+[redis]
+addr="127.0.0.1:6379"
+password=""
+dB=1
+dialTimeout="3s"
+readTimeout="5s"
+writeTimeout="3s"
+idleTimeout ="30s"
+idleCheckFrequency="15s"
+poolTimeout="30s"
+maxConnAge="30s"
+minIdleConns=5
+poolSize=20

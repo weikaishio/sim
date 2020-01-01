@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -12,40 +11,27 @@ import (
 	"time"
 
 	"github.com/mkideal/log"
-	"github.com/weikaishio/sim/cmd/server/business"
-	"github.com/weikaishio/sim/cmd/server/config"
 	"github.com/weikaishio/sim/common/osutil/pid"
+	"github.com/weikaishio/sim/im_service/business"
+	"github.com/weikaishio/sim/im_service/config"
 )
 
 var (
-	env       string
-	location  string
-	pidFile   string
-	configDir string
-	cfg       *config.Config
-	svr       *business.Server
+	svr *business.Server
 )
 
-func init() {
-	flag.StringVar(&env, "env", "local", "The environment the program should run under.")
-	flag.StringVar(&location, "location", "", "Server Location. Use only if the env is not local and develop.")
-	flag.StringVar(&pidFile, "pid", "sim.pid", "pid filepath")
-	flag.StringVar(&configDir, "configDir", "./config/", "config path")
-	flag.Parse()
-}
 func main() {
-	flag.Parse()
 	var err error
-	cfg, err = config.NewConfig(configDir, env, location)
+	err = config.Init()
 	if err != nil {
-		log.Fatal("server.NewConfig(:%s) err:%v", configDir, err)
+		log.Fatal("config.Init() err:%v", err)
 	}
 
-	if err := pid.New(pidFile); err != nil {
-		log.Fatal("pid.New(%s),err:%v", pidFile, err)
+	if err := pid.New(config.PidFile); err != nil {
+		log.Fatal("pid.New(%s),err:%v", config.PidFile, err)
 	}
 	defer func() {
-		pid.Remove(pidFile)
+		_ = pid.Remove(config.PidFile)
 		defer log.Uninit(log.InitFile("./log/sim.log"))
 	}()
 
@@ -94,18 +80,16 @@ func reload() {
 		time.Sleep(time.Second)
 	}
 	var err error
-	cfg, err = cfg.Reload()
+	err = config.Init()
 	if err != nil {
-		log.Fatal("cfg.reload err:%v", err)
+		log.Fatal("config.Init() err:%v", err)
 	} else {
-		log.Info("cfg:%v", cfg)
+		log.Info("cfg:%v", config.Conf)
 	}
 	//log.SetLevelFromString(cfg.LogLevel)
 
 	if svr == nil {
-		svr = business.NewServer(cfg)
-	} else {
-		svr.RefreshCfg(cfg)
+		svr = business.NewServer()
 	}
 	svr.Start()
 }

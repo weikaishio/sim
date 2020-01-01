@@ -11,20 +11,20 @@ import (
 	"time"
 
 	"github.com/weikaishio/distributed_lib/buffer"
-	"github.com/weikaishio/sim/cmd/server/config"
-	"github.com/weikaishio/sim/codec"
-	"github.com/weikaishio/sim/common/netutil"
+	"github.com/weikaishio/distributed_lib/etcd"
+	"github.com/weikaishio/sim/im_service/config"
+	"github.com/weikaishio/sim/pb/im_service"
+	"google.golang.org/grpc"
 
 	"github.com/mkideal/log"
 )
 
 type Server struct {
-	cfg      *config.Config
-	seq      int32
-	listener net.Listener
-	httpSvr  *http.Server
-	mux      *http.ServeMux
-	once     sync.Once
+	seq       int32
+	httpSvr   *http.Server
+	discovery *etcd.Discovery
+	mux       *http.ServeMux
+	once      sync.Once
 
 	bufPool *buffer.Pool
 
@@ -33,15 +33,11 @@ type Server struct {
 	running       int32
 }
 
-func NewServer(cfg *config.Config) *Server {
+func NewServer() *Server {
 	return &Server{
-		cfg:     cfg,
 		clients: map[uint32]*Client{},
 		bufPool: buffer.NewPool(bufPoolSize, bufMaxPoolSize),
 	}
-}
-func (s *Server) RefreshCfg(cfg *config.Config) {
-	s.cfg = cfg
 }
 func (s *Server) isRunning() bool {
 	return atomic.LoadInt32(&s.running) != 0
@@ -61,22 +57,62 @@ func (s *Server) stopListen() {
 		_ = s.httpSvr.Close()
 		log.Info("s.httpSvr Close")
 	}
-	if s.listener != nil {
-		_ = s.listener.Close()
-	}
 }
 func (s *Server) makeNewSeq() int32 {
 	atomic.AddInt32(&s.seq, 1)
 	return s.seq
 }
-func (s *Server) beginListen() {
-	addr := fmt.Sprintf("%s:%d", s.cfg.Host, s.cfg.Port)
-	if listener, err := netutil.ListenAndServeTCP(addr, s.handleClientConn, true); err != nil {
-		log.Fatal("server start listen:%s,err:%v", addr, err)
-	} else {
-		s.listener = listener
+func (s *Server) RPCSvrRun(auths map[string]string, certFile, keyFile string) error {
+	listen, err := net.Listen("tcp", fmt.Sprintf(":%d", config.Conf.GrpcSvr.Port))
+	if err != nil {
+		log.Error("RPCSvrRun net.Listen err:%v", err)
+		return err
 	}
-	log.Trace("beginListen addr:%s", addr)
+	//auth := grpc_server.NewRPCSecurity(auths, certFile, keyFile)
+	rpcSvr := grpc.NewServer(
+		//grpc.Creds(auth.Creds),
+		//grpc.UnaryInterceptor(grpc.UnaryServerInterceptor(auth.UnaryInterceptor)),
+	)
+	svr := NewIMBiz()
+	im_service.RegisterImServer(rpcSvr, im_service.ImServer(svr))
+	log.Info("gRPC Run")
+	s.discovery.Register(config.Conf.GrpcSvr.Target, config.Conf.GrpcSvr.Host, config.Conf.GrpcSvr.Port,
+		60*time.Second, "im service gRPC")
+	err = rpcSvr.Serve(listen)
+	if err != nil {
+		log.Error("RPCSvrRun svr.Serve err:%v", err)
+	}
+	return err
+}
+func (s *Server) InitDiscovery(endpoints []string, username, password string) error {
+	var err error
+	s.discovery, err = etcd.NewDiscovery(endpoints, username, password)
+	if err != nil {
+		log.Error("etcd.NewDiscovery err:%v", err)
+
+	}
+	return err
+}
+func (s *Server) RegForDiscovery(serviceName string, host string, port int) {
+	s.discovery.Register(serviceName, host, port, 60*time.Second, "wf gRPC")
+}
+func (s *Server) UnRegForDiscovery(serviceName string, host string, port int) {
+	if s.discovery != nil {
+		log.Info("quit discover")
+		s.discovery.UnRegister(serviceName, host, port)
+	}
+}
+func (s *Server) beginListen() {
+	err := s.InitDiscovery(config.Conf.Etcd.EndpointAry(), config.Conf.Etcd.Username, config.Conf.Etcd.Password)
+	if err != nil {
+		log.Fatal("etcd.NewDiscovery err:%v", err)
+	}
+	go func() {
+		err := s.RPCSvrRun(config.Conf.GrpcAuths.AuthMap(), config.Conf.GrpcSvr.CertFile, config.Conf.GrpcSvr.KeyFile)
+		if err != nil {
+			log.Error("RPCSvrRun err:%v", err)
+		}
+	}()
 	go func() {
 		s.once.Do(func() {
 			s.mux = http.NewServeMux()
@@ -100,7 +136,7 @@ func (s *Server) beginListen() {
 			//s.mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 		})
 		s.httpSvr = &http.Server{
-			Addr:           fmt.Sprintf(":%d", s.cfg.HttpPort),
+			Addr:           fmt.Sprintf(":%d", config.Conf.GrpcSvr.Port+1),
 			Handler:        s.mux,
 			ReadTimeout:    10 * time.Second,
 			WriteTimeout:   30 * time.Second,
@@ -109,48 +145,9 @@ func (s *Server) beginListen() {
 		log.Error("http listen err:%v", s.httpSvr.ListenAndServe())
 	}()
 }
-func (s *Server) handleClientConn(conn net.Conn) {
-	remoteAddr := conn.RemoteAddr().String()
-	if !s.isRunning() {
-		_ = conn.Close()
-		log.Warn("handleClientConn !s.isRunning() conn:%s.Close", remoteAddr)
-		return
-	}
-	client := newClient(s, s.makeNewSeq(), remoteAddr)
-	uniqueId := fmt.Sprintf("m%d_%s", client.uniqueId, remoteAddr)
-	log.Trace("handleClientConn remoteAddr:%s,uniqueId:%s", remoteAddr, uniqueId)
-	readStream := netutil.NewReadStream(conn, client.onRecvPacket)
-	readStream.SetMagic([]byte(codec.MAGIC))
-	readStream.SetTimeout(time.Duration(s.cfg.KeepaliveTime) * time.Second)
-	session := netutil.NewRWSession(conn, readStream, uniqueId, maxConWriteSize)
-	client.session = session
-	session.Run(client.onNewSession, client.onQuitSession)
-	session.WSession = nil
-	s.removeClient(client)
-}
-func (s *Server) removeClient(client *Client) {
-	log.Trace("removeClient:%v", client)
-	key := client.id
-	s.clientsLocker.Lock()
-	if oldClient, ok := s.clients[key]; ok && oldClient.uniqueId == client.uniqueId {
-		delete(s.clients, key)
-	}
-	s.clientsLocker.Unlock()
-	log.Info("removeClient:%v, success", client)
-}
-func (s *Server) quitAllClient() {
-	s.clientsLocker.Lock()
-	defer s.clientsLocker.Unlock()
-	ids := make([]string, 0)
-	for _, m := range s.clients {
-		m.session.Quit(false)
-		ids = append(ids, strconv.Itoa(int(m.id)))
-	}
-}
+
 func (s *Server) Quit() {
 	log.Info("svr begin Quit")
-
-	s.quitAllClient()
 	atomic.StoreInt32(&s.running, 0)
 	s.stopListen()
 	log.Info("svr finish Quit")
