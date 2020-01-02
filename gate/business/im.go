@@ -3,6 +3,7 @@ package business
 import (
 	"context"
 	"errors"
+	"io"
 	"sync"
 	"time"
 
@@ -15,9 +16,10 @@ import (
 )
 
 type IMRPC struct {
-	rpcPool *grpc_pool.RPCPool
-	newMsg  chan *im_service.MsgModel
-	revMsg  chan *im_service.MsgModel
+	rpcPool   *grpc_pool.RPCPool
+	newMsg    chan *im_service.MsgModel
+	revMsg    chan *im_service.MsgModel
+	retryWait time.Duration
 }
 
 var (
@@ -65,12 +67,19 @@ func (p *IMRPC) MsgCommunication() error {
 	stream, err := cli.NewMsg(context.Background())
 	if err != nil {
 		return err
+	} else {
+		p.retryWait = 0
 	}
-
+	ctx := stream.Context()
 	go func() {
 		for msg := range p.newMsg {
-			log.Info("new send msg:%v", msg)
-			stream.Send(msg)
+			select {
+			case <-ctx.Done():
+				log.Warn("the sent go routinue : client close conn by context, err:%v", ctx.Err())
+				return
+			default:
+				_ = stream.Send(msg)
+			}
 		}
 	}()
 	go func() {
@@ -87,17 +96,24 @@ func (p *IMRPC) MsgCommunication() error {
 			}
 		}
 	}()
-	//todo:svr closed, re
 	for {
-		//stream.Trailer()
-		msg, err := stream.Recv()
-		if err != nil {
-			log.Error("rev msg:%v", msg)
-			break
-		} else {
-			log.Info("rev msg:%v", msg)
-			p.revMsg <- msg
+		select {
+		case <-ctx.Done():
+			log.Warn("client close conn by context, err:%v", ctx.Err())
+			return ctx.Err()
+		default:
+			//stream.Trailer()
+			msg, err := stream.Recv()
+			if err == io.EOF {
+				log.Warn("client stream end")
+				return err
+			} else if err != nil {
+				log.Error("rev msg:%v", msg)
+				break
+			} else {
+				log.Info("rev msg:%v", msg)
+				p.revMsg <- msg
+			}
 		}
 	}
-	return nil
 }

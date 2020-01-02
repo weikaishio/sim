@@ -1,6 +1,7 @@
 package business
 
 import (
+	"io"
 	"time"
 
 	"github.com/mkideal/log"
@@ -20,13 +21,18 @@ func NewIMBiz() *IMBiz {
 }
 
 func (i *IMBiz) NewMsg(stream im_service.Im_NewMsgServer) error {
-	//context from stream
+	ctx := stream.Context()
 	go func() {
 		for msg := range i.newMsg {
-			log.Info("new send msg:%v", msg)
-			err := stream.Send(msg)
-			if err != nil {
-				log.Error("stream.Send(%v) err:%v", msg, err)
+			select {
+			case <-ctx.Done():
+				log.Warn("the sent go routinue : client close conn by context, err:%v", ctx.Err())
+				return
+			default:
+				err := stream.Send(msg)
+				if err != nil {
+					log.Error("stream.Send(%v) err:%v", msg, err)
+				}
 			}
 		}
 	}()
@@ -45,14 +51,22 @@ func (i *IMBiz) NewMsg(stream im_service.Im_NewMsgServer) error {
 		}
 	}()
 	for {
-		msg, err := stream.Recv()
-		if err != nil {
-			log.Error("rev msg:%v", msg)
-			break
-		} else {
-			log.Info("rev msg:%v", msg)
-			i.revMsg <- msg
+		select {
+		case <-ctx.Done():
+			log.Warn("client close conn by context, err:%v", ctx.Err())
+			return ctx.Err()
+		default:
+			msg, err := stream.Recv()
+			if err == io.EOF {
+				log.Warn("client stream end")
+				return nil
+			} else if err != nil {
+				log.Error("rev msg:%v", msg)
+				break
+			} else {
+				log.Info("rev msg:%v", msg)
+				i.revMsg <- msg
+			}
 		}
 	}
-	return nil
 }

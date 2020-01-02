@@ -2,7 +2,7 @@ module github.com/weikaishio/sim
 
 go 1.13
 
-replace github.com/coreos/go-systemd => /Users/wangjiangang/beta/workspace/golang/src/github.com/coreos/go-systemd
+replace github.com/coreos/go-systemd => /Users/shimhojun/beta/workpalce/golang/src/github.com/coreos/go-systemd
 
 require (
 	github.com/BurntSushi/toml v0.3.1
