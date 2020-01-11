@@ -15,6 +15,11 @@
 这边尝试下bazel构建，赶脚也不错
 ```
 * 设计考虑时序图
+```text
+简单实现 
+消息经过User -> Gate -> route -> IMService -> route -> Gate
+已读未读状态User -> Gate -> route -> Gate -> User
+```
 ```sequence
 title im时序图
 
@@ -23,8 +28,8 @@ participant Gate
 participant Route
 participant IMService
 
-User->Gate:Login, SendMsg
-Gate->User:RecvMsg
+User->Gate:Login, SendMsg, ReadMsg
+Gate->User:RecvMsg, ReadMsg, RevReadMsg
 Gate->Route:UploadMsg
 Route->IMService:UploadMsg
 ```

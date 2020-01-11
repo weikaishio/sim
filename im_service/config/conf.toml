@@ -8,10 +8,10 @@ password="root"
 
 [grpcSvr]
 target="im_service"
-port=8911
+port=8912
 host="127.0.0.1"
-cert_file="cert.pem"
-key_file="cert.key"
+certFile="cert.pem"
+keyFile="cert.key"
 
 [grpcAuths]
 auths="test1=test123&test2=test234"

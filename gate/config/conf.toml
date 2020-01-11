@@ -1,17 +1,17 @@
 [net]
 host="0.0.0.0"
 port= 8910
-keepalive-time= 180
+keepaliveTime= 180
 
 [log]
 dir = "/Users/wangjiangang/beta/workspace/golang/log/sim_gate"
 
 [grpcImCli]
 target="im_service"
-cert_server_name="domain.com"
-cert_file="domain.com.pem"
-auth_name="test"
-auth_pwd="test123"
+certServerName=""
+certFile=""
+authName="test"
+authPwd="test123"
 
 [etcd]
 endpoints="59.110.27.156:3379,59.110.27.156:3381,59.110.27.156:3383"

@@ -48,7 +48,7 @@ type HeartBeatRes struct {
 	Status byte
 }
 
-//cmd=0xC0
+//cmd=0x3
 type SendMsg struct {
 	Cmd     uint16
 	Seq     uint16
@@ -62,7 +62,7 @@ type SendMsgRes struct {
 	Status byte
 }
 
-//cmd=0x3
+//cmd=0x4
 type RevMsg struct {
 	Cmd   uint16
 	Seq   uint16
@@ -70,6 +70,19 @@ type RevMsg struct {
 }
 
 type RevMsgRes struct {
+	Cmd    uint16
+	Seq    uint16
+	Status byte
+}
+
+//cmd=0x5
+type ReadMsg struct {
+	Cmd   uint16
+	Seq   uint16
+	MsgId uint32
+}
+
+type ReadMsgRes struct {
 	Cmd    uint16
 	Seq    uint16
 	Status byte

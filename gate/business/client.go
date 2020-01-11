@@ -45,7 +45,7 @@ func (c *Client) onRecvPacket(packet []byte) {
 	now := time.Now()
 	if int(now.Sub(c.lastActiveTime).Seconds()) > config.Conf.Net.KeepaliveTime {
 		msg, err := codec.Decode(packet)
-		log.Warn("Client onRecvPacket timeout:%d,msg:%v,decodeErr:%v", int(now.Sub(c.lastActiveTime).Seconds()), msg, err)
+		log.Warn("Client onRecvPacket timeout:%d > %d,msg:%v,decodeErr:%v", int(now.Sub(c.lastActiveTime).Seconds()), config.Conf.Net.KeepaliveTime, msg, err)
 		c.session.Quit(false)
 		return
 	}
@@ -69,15 +69,37 @@ func (c *Client) dispatchProto(msg interface{}) {
 		c.onAuth(ptc)
 	case *codec.HeartBeat:
 		c.onHeartbeat(ptc)
+	case *codec.SendMsg:
+		c.onSendMsg(ptc)
+	case *codec.ReadMsg:
+		c.onReadMsg(ptc)
 	default:
 		log.Warn("dispatchProto not support cmd:%v", ptc)
 	}
+}
+func (c *Client) onSendMsg(ptc *codec.SendMsg) {
+	log.Info("onSendMsg ptc:%v", ptc)
+	res := &codec.SendMsgRes{
+		Cmd:    codec.CMD_SendMsgRes,
+		Seq:    ptc.Seq,
+		Status: codec.RESP_Status_Success,
+	}
+	c.sendProto(res.Cmd, res)
+}
+func (c *Client) onReadMsg(ptc *codec.ReadMsg) {
+	log.Info("onReadMsg ptc:%v", ptc)
+	res := &codec.ReadMsgRes{
+		Cmd:    codec.CMD_ReadMsgRes,
+		Seq:    ptc.Seq,
+		Status: codec.RESP_Status_Success,
+	}
+	c.sendProto(res.Cmd, res)
 }
 func (c *Client) onAuth(ptc *codec.Auth) {
 	log.Info("onAuth:%d,:%v", c.id, ptc)
 	authRes := &codec.AuthRes{
 		Cmd:    codec.CMD_AuthRes,
-		Seq:    c.makeNewSeq(),
+		Seq:    ptc.Seq,
 		Status: codec.RESP_Status_Success,
 	}
 	c.id = ptc.MachineId
@@ -90,9 +112,6 @@ func (c *Client) onAuth(ptc *codec.Auth) {
 				break
 			}
 			time.Sleep(3 * time.Second)
-
-			log.Info("onSendNumber:%d,:%v", c.id, ptc)
-			time.Sleep(27 * time.Second)
 		}
 	}()
 }
@@ -100,7 +119,7 @@ func (c *Client) onHandShake(ptc *codec.HandShake) {
 	log.Info("onHandShake:%d,:%v", c.id, ptc)
 	res := &codec.HandShakeRes{
 		Cmd:    codec.CMD_HandShakeRes,
-		Seq:    c.makeNewSeq(),
+		Seq:    ptc.Seq,
 		Status: codec.RESP_Status_Success,
 	}
 	c.sendProto(res.Cmd, res)

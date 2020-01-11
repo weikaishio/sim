@@ -3,7 +3,6 @@ package config
 import (
 	"errors"
 	"flag"
-	"path"
 
 	"github.com/weikaishio/sim/common/confutil"
 
@@ -11,7 +10,6 @@ import (
 )
 
 var (
-	// Conf global config variable
 	Conf     = &Config{}
 	confPath string
 	PidFile  string
@@ -26,20 +24,14 @@ type Config struct {
 }
 
 func init() {
-	flag.StringVar(&confPath, "configDir", "./config", "config path")
+	flag.StringVar(&confPath, "configDir", "./config/conf.toml", "config path")
 	flag.StringVar(&PidFile, "pid", "sim_gate.pid", "pid filepath")
 }
 
-//Init int config
 func Init() error {
 	if confPath != "" {
-		path := path.Join(confPath, "/conf.toml")
-		return local(path)
+		_, err := toml.DecodeFile(confPath, &Conf)
+		return err
 	}
 	return errors.New("confPath is nil")
-}
-
-func local(path string) (err error) {
-	_, err = toml.DecodeFile(path, &Conf)
-	return
 }

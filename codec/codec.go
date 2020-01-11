@@ -26,14 +26,16 @@ const (
 	CMD_AuthRes      = 0x81
 	CMD_HeartBeat    = 0x2
 	CMD_HeartBeatRes = 0x82
-	CMD_SendMsg      = 0xC0
-	CMD_SendMsgRes   = 0x40
-	CMD_RevMsg       = 0x3
-	CMD_RevMsgRes    = 0x83
+	CMD_SendMsg      = 0x3
+	CMD_SendMsgRes   = 0x83
+	CMD_RevMsg       = 0x4
+	CMD_RevMsgRes    = 0x84
+	CMD_ReadMsg      = 0x5
+	CMD_ReadMsgRes   = 0x85
 )
 
 var (
-	MAGIC     = "cw"
+	MAGIC     = ""
 	LEN_MAGIC = len(MAGIC)
 
 	ERR_NOTIMPLEMETN = errors.New("not implement")
@@ -159,6 +161,24 @@ func Decode(buf []byte) (obj interface{}, err error) {
 		obj.Cmd = cmd
 		return obj, err
 
+	case CMD_ReadMsg:
+		obj, err := DecodeReadMsg(buf[baseLen:], bodyLen)
+		if err != nil {
+			return nil, err
+		}
+		obj.Seq = seq
+		obj.Cmd = cmd
+		return obj, err
+
+	case CMD_ReadMsgRes:
+		obj, err := DecodeReadMsgRes(buf[baseLen:], bodyLen)
+		if err != nil {
+			return nil, err
+		}
+		obj.Seq = seq
+		obj.Cmd = cmd
+		return obj, err
+
 	}
 
 	return nil, ERR_NOTIMPLEMETN
@@ -213,6 +233,12 @@ func Encode(cmd uint16, obj interface{}) ([]byte, error) {
 
 	case CMD_RevMsgRes:
 		return EncodeRevMsgRes(obj.(*RevMsgRes))
+
+	case CMD_ReadMsg:
+		return EncodeReadMsg(obj.(*ReadMsg))
+
+	case CMD_ReadMsgRes:
+		return EncodeReadMsgRes(obj.(*ReadMsgRes))
 
 	}
 	return nil, ERR_NOTIMPLEMETN
@@ -716,6 +742,94 @@ func DecodeRevMsgRes(buf []byte, bodyLen uint16) (revMsgRes *RevMsgRes, err erro
 	revMsgRes.Seq = binary.BigEndian.Uint16(buf[offset:])
 	offset += 2
 	revMsgRes.Status = buf[offset]
+	offset += 1
+
+	return
+}
+
+func EncodeReadMsg(readMsg *ReadMsg) ([]byte, error) {
+	packetBuf := bytes.NewBufferString("")
+
+	bodyLen := 8
+	if packetHeader, err := EncodeHeader(readMsg.Cmd, uint16(bodyLen), readMsg.Seq); err != nil {
+		return nil, err
+	} else if _, err := packetBuf.Write(packetHeader); err != nil {
+		return nil, err
+	}
+
+	bufCmd := make([]byte, 2)
+	binary.BigEndian.PutUint16(bufCmd, readMsg.Cmd)
+	if _, err := packetBuf.Write(bufCmd); err != nil {
+		return nil, err
+	}
+	bufSeq := make([]byte, 2)
+	binary.BigEndian.PutUint16(bufSeq, readMsg.Seq)
+	if _, err := packetBuf.Write(bufSeq); err != nil {
+		return nil, err
+	}
+	bufMsgId := make([]byte, 4)
+	binary.BigEndian.PutUint32(bufMsgId, readMsg.MsgId)
+	if _, err := packetBuf.Write(bufMsgId); err != nil {
+		return nil, err
+	}
+
+	return packetBuf.Bytes(), nil
+}
+func DecodeReadMsg(buf []byte, bodyLen uint16) (readMsg *ReadMsg, err error) {
+	if uint16(len(buf)) != bodyLen || bodyLen < 8 {
+		return nil, ERR_LEN
+	}
+	readMsg = &ReadMsg{}
+	offset := 0
+
+	readMsg.Cmd = binary.BigEndian.Uint16(buf[offset:])
+	offset += 2
+	readMsg.Seq = binary.BigEndian.Uint16(buf[offset:])
+	offset += 2
+	readMsg.MsgId = binary.BigEndian.Uint32(buf[offset:])
+	offset += 4
+
+	return
+}
+
+func EncodeReadMsgRes(readMsgRes *ReadMsgRes) ([]byte, error) {
+	packetBuf := bytes.NewBufferString("")
+
+	bodyLen := 5
+	if packetHeader, err := EncodeHeader(readMsgRes.Cmd, uint16(bodyLen), readMsgRes.Seq); err != nil {
+		return nil, err
+	} else if _, err := packetBuf.Write(packetHeader); err != nil {
+		return nil, err
+	}
+
+	bufCmd := make([]byte, 2)
+	binary.BigEndian.PutUint16(bufCmd, readMsgRes.Cmd)
+	if _, err := packetBuf.Write(bufCmd); err != nil {
+		return nil, err
+	}
+	bufSeq := make([]byte, 2)
+	binary.BigEndian.PutUint16(bufSeq, readMsgRes.Seq)
+	if _, err := packetBuf.Write(bufSeq); err != nil {
+		return nil, err
+	}
+	if _, err := packetBuf.Write([]byte{readMsgRes.Status}); err != nil {
+		return nil, err
+	}
+
+	return packetBuf.Bytes(), nil
+}
+func DecodeReadMsgRes(buf []byte, bodyLen uint16) (readMsgRes *ReadMsgRes, err error) {
+	if uint16(len(buf)) != bodyLen || bodyLen < 5 {
+		return nil, ERR_LEN
+	}
+	readMsgRes = &ReadMsgRes{}
+	offset := 0
+
+	readMsgRes.Cmd = binary.BigEndian.Uint16(buf[offset:])
+	offset += 2
+	readMsgRes.Seq = binary.BigEndian.Uint16(buf[offset:])
+	offset += 2
+	readMsgRes.Status = buf[offset]
 	offset += 1
 
 	return
