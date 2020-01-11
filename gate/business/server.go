@@ -52,7 +52,16 @@ func (s *Server) Start() {
 	if err != nil {
 		panic(fmt.Sprintf("RPCIMSvrSharedInstance Init err:%v", err))
 	}
-	go RPCIMSvrSharedInstance().MsgCommunication()
+	go func() {
+		for {
+			err := RPCIMSvrSharedInstance().MsgCommunication()
+			if err != nil {
+				log.Error("MsgCommunication err:%v", err)
+				RPCIMSvrSharedInstance().retryWait += 3 * time.Second
+			}
+			time.Sleep(RPCIMSvrSharedInstance().retryWait)
+		}
+	}()
 
 	log.Info("svr finish Start")
 }
