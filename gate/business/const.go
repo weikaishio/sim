@@ -19,4 +19,5 @@ const (
 	ClientStatus_Connected  = 0
 	ClientStatus_HandShaked = 1
 	ClientStatus_Logined    = 2
+	ClientStatus_Logouted   = 3
 )

@@ -6,6 +6,9 @@ keepaliveTime= 180
 [log]
 dir = "/Users/wangjiangang/beta/workspace/golang/log/sim_gate"
 
+[security]
+private-key-file="./gate_private.pem"
+
 [grpcImCli]
 target="im_service"
 certServerName=""

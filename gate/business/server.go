@@ -27,14 +27,14 @@ type Server struct {
 
 	bufPool *buffer.Pool
 
-	clients       map[uint32]*Client
+	clients       map[uint32]Client
 	clientsLocker sync.RWMutex
 	running       int32
 }
 
 func NewServer() *Server {
 	return &Server{
-		clients: map[uint32]*Client{},
+		clients: map[uint32]Client{},
 		bufPool: buffer.NewPool(bufPoolSize, bufMaxPoolSize),
 	}
 }
@@ -126,7 +126,7 @@ func (s *Server) handleClientConn(conn net.Conn) {
 		log.Warn("handleClientConn !s.isRunning() conn:%s.Close", remoteAddr)
 		return
 	}
-	client := newClient(s, s.makeNewSeq(), remoteAddr)
+	client := newClientCodec(s, uint32(s.makeNewSeq()), remoteAddr)
 	uniqueId := fmt.Sprintf("m%d_%s", client.uniqueId, remoteAddr)
 	log.Trace("handleClientConn remoteAddr:%s,uniqueId:%s", remoteAddr, uniqueId)
 	readStream := netutil.NewReadStream(conn, client.onRecvPacket)
@@ -138,11 +138,11 @@ func (s *Server) handleClientConn(conn net.Conn) {
 	session.WSession = nil
 	s.removeClient(client)
 }
-func (s *Server) removeClient(client *Client) {
+func (s *Server) removeClient(client Client) {
 	log.Trace("removeClient:%v", client)
-	key := client.id
+	key := client.GetId()
 	s.clientsLocker.Lock()
-	if oldClient, ok := s.clients[key]; ok && oldClient.uniqueId == client.uniqueId {
+	if oldClient, ok := s.clients[key]; ok && oldClient.GetUniqueId() == client.GetUniqueId() {
 		delete(s.clients, key)
 	}
 	s.clientsLocker.Unlock()
@@ -153,8 +153,8 @@ func (s *Server) quitAllClient() {
 	defer s.clientsLocker.Unlock()
 	ids := make([]string, 0)
 	for _, m := range s.clients {
-		m.session.Quit(false)
-		ids = append(ids, strconv.Itoa(int(m.id)))
+		m.GetSession().Quit(false)
+		ids = append(ids, fmt.Sprintf("%d",m.GetId()))
 	}
 }
 func (s *Server) Quit() {

@@ -1,0 +1,152 @@
+syntax = "proto3";
+
+package gate;
+
+enum ProtoType {
+    HandShakeReqType = 0;
+    HandShakeResType = 1;
+    HeartReqType = 2;
+    HeartResType = 3;
+
+    LoginReqType = 10;
+    LoginResType = 11;
+    LogOutReqType = 12;
+    LogOutResType = 14;
+
+    SendPriMsgReqType = 20;
+    SendPriMsgResType = 21;
+    NewMsgPullReqType = 22;
+    NewMsgPullResType = 23;
+
+    NewMsgNotifyType = 30;
+    KickoutNotifyType = 31;
+
+    ChatUserInfoType = 100;
+    ChatMsgInfoType = 101;
+    ChatSendedMsgInfoType = 102;
+}
+
+enum MsgType {
+    SYSTEM = 0;
+    PRIVATE = 1;
+    GROUP = 2;
+    CHATROOM = 3;
+
+}
+enum ContentType {
+    TEXT = 0;
+    IMAGE = 1;
+    AUDIO = 2;
+    VIDEO = 3;
+    POSITION = 4;
+}
+enum ResultType {
+    FAIL = 0;
+    SUCCESS = 1;
+    PARAMSINVALID = 2;
+    SERVERNOTRUNNING = 3;
+    NOTINRIGHTSTATUS = 4;
+    NOTSUPPORTAPPID = 5;
+}
+
+enum KickType {
+    OTHERLOGIN = 0;
+    FORBIDDEN = 2;
+}
+
+message ChatUserInfo {
+    string uid = 1;
+    string nickname = 2;
+    int32 gender = 3;
+    string avatar = 4;
+}
+message ChatMsgInfo {
+    //    int32 msgId = 1; //msg针对该用户的id, 用户来取消息发NewMsgPullReq需要带上的lastmsgId 就是该msgId
+    string msg_uuid = 1; //msg唯一id
+    ChatUserInfo frm_user_info = 2;
+    ChatSendedMsgInfo msg_info = 3;
+}
+message ChatSendedMsgInfo {
+    string target_uid = 1;
+    MsgType msg_type = 2;
+    ContentType content_type = 3;
+    string content = 4;
+}
+// 握手协议: 客户端和Gate建立连接后,客户端发送的第一个协议,用于交换对称密钥
+message HandShakeReq {
+    bytes pubkeyN = 1; //rsa 模
+    int32 pubkeyE = 2; //rsa 指数
+}
+
+// 握手返回协议
+message HandShakeRes {
+    bytes semkey = 1; //需要用客户端公钥解密的加密密钥
+    bytes sign = 2; //签名 需要校验该返回信息的安全
+    ResultType result = 3;
+    string description = 4;
+}
+
+message LoginReq {
+    string uid = 1; //用户id
+    string user_token = 2; //用来校验登陆
+    string os = 3; //android or ios
+    string appid = 4; //IM分配给app的id，后续让IM支持多个app
+    int32 sdk_version = 5; //客户端IM sdk版本，后续兼容处理需要
+    string device_token = 6; //用来发push用的 ios的deviceToken,android 的uuid
+}
+
+message LoginRes {
+    ResultType result = 1;
+    string description = 2;
+}
+
+message LogOutReq {
+
+}
+
+message LogOutRes {
+
+}
+
+message HeartReq {
+
+}
+
+message HeartRes {
+
+}
+
+message SendPriMsgReq {
+    ChatSendedMsgInfo chat_msg = 1;
+}
+
+message SendPriMsgRes {
+    int64 created_at = 1;
+    ResultType result = 2; //被拉黑 不是好友等可能失败
+    string description = 3;
+}
+//Gate 主动发给客户端的 通知有新消息，客户端新连接上来就会直接取消息，连接后靠此消息来拉
+message NewMsgNotify {
+    MsgType msg_type = 1;
+    int64 msg_id = 2; //新消息的Id
+    uint32 query_after_seconds = 3; //让客户端sdk延迟取消息
+}
+
+//Gate 主动发给客户端的 通知被另外的设备登录踢出
+message KickoutNotify {
+    KickType reason = 1;
+}
+
+//客户端发起拉消息请求
+message NewMsgPullReq {
+    string last_msg_uuid = 1; //该消息Id之前的消息 已经正常收到，svr会移除该用户收件箱此Id之前的消息
+    MsgType msg_type = 2;
+    int32 limit = 3; // 取多少条消息
+}
+
+message NewMsgPullRes {
+    repeated ChatMsgInfo messages = 1;
+    bool hasMore = 2;
+    ResultType result = 3;
+    string description = 4;
+}

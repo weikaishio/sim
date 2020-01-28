@@ -22,6 +22,7 @@
 ### rev msg
 ```text
 新建立连接考虑通过http取历史消息，或者拆包组包通过gate直接取消息
+上下行消息流式加密，密钥用auth登录后分配的sessionId
 ```
 1. 新消息过来(new msg notify)，im_service->route->gate->client
 2. 发送取新消息请求，带上之前取到消息的最大消息id client->gate->route->im_service
@@ -29,7 +30,10 @@
 
 ### send msg
 
-
+### 推送
+```text
+推送服务实现新消息推送等，独立走队列给推送服务
+```
 ## 时序图
 ```text
 简单实现 
